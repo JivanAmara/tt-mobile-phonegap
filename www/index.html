@@ -54,14 +54,43 @@
         </div>
 
         <div id="controls">
-            <p>Controls go here</p>
+            <p class="syllable-text"></p>
+            <audio id="example-audio" controls="" src=""></audio>
+            <p id="auth-button">Authenticate</p>
+            <p id="record-button">Record your attempt</p>
+            <p id="next-button">Next syllable</p>
+            
+            <div id="result">
+                <p>Result:
+                    <img class="result-image" id="spinner-image" src="img/circular_spinner.gif" /> 
+                    <img class="result-image" id="success-image" src="img/green_checkmark.png" /> 
+                    <img class="result-image" id="failure-image" src="img/red_x.png" /> 
+                    <img class="result-image" id="unknown-image" src="img/blue_question-mark.png" /> 
+                </p>
+                <p id="sounds-like">Sounds like tone <span class="result-tone">?</span>.</p>
+            </div>
         </div>
     </div>
     <script type="text/javascript" src="cordova.js"></script>
     <script type="text/javascript" src="js/jquery-3.1.0.min.js"></script>
+    <script type="text/javascript" src="js/spark-md5.js"></script>
     <script type="text/javascript" src="js/index.js"></script>
     <script type="text/javascript">
-        app.initialize();
+        rh = ResultHandler(
+            "#result", "#spinner-image", "#success-image", "#failure-image", "#unknown-image",
+            "#sounds-like"
+        );
+        tts = ToneTutorServices("example-audio", "syllable-text", "result-tone", rh);
+        app.initialize(tts);
+        $('#auth-button').click(function() {
+            tts.authenticate();
+        });
+        $('#next-button').click(function() {
+            tts.getRandomSyllable();
+        });
+        $('#record-button').click(function() {
+            app.recordAttempt();
+        });
     </script>
 </body>
 

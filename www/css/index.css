@@ -78,6 +78,14 @@ body {
     display: none;
 }
 
+.result-image {
+    height: 1em;
+}
+
+#result {
+    display: none;
+}
+
 /* Landscape layout (with min-width) */
 @media screen and (min-aspect-ratio: 1/1) and (min-width:400px) {
     .app {
