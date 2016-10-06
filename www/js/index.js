@@ -26,7 +26,7 @@ if(!DEBUG){
     }
 }
 
-function ResultHandler(resultId, spinnerId, successId, failureId, unknownId, soundsLikeId) {
+function ResultHandler(resultId, spinnerId, successId, failureId, unknownId, resultMsgId) {
     /* Handles the display/hiding of images related to results from syllableCheck. */
     var rih = this;
     rih.resultElem = $(resultId);
@@ -34,14 +34,14 @@ function ResultHandler(resultId, spinnerId, successId, failureId, unknownId, sou
     rih.successImg = $(successId);    // Green checkmark
     rih.failureImg = $(failureId);    // Red X
     rih.unknownImg = $(unknownId);    // Blue Question Mark
-    rih.soundsLikeElem = $(soundsLikeId);
+    rih.resultMsgElem = $(resultMsgId);
 
     rih.clear = function() {
         rih.spinnerImg.hide();
         rih.successImg.hide();
         rih.failureImg.hide();
         rih.unknownImg.hide();
-        rih.soundsLikeElem.hide();
+        rih.resultMsgElem.hide();
     };
 
     rih.spinner = function() {
@@ -54,15 +54,18 @@ function ResultHandler(resultId, spinnerId, successId, failureId, unknownId, sou
         rih.successImg.show();
     };
 
-    rih.failure = function() {
+    rih.failure = function(resultTone) {
         rih.clear();
         rih.failureImg.show();
-        rih.soundsLikeElem.show();
+        rih.resultMsgElem.html('Sounds like tone ' + resultTone);
+        rih.resultMsgElem.show();
     };
     
     rih.unknown = function() {
         rih.clear();
-        rih.unkownImg.show();
+        rih.unknownImg.show();
+        rih.resultMsgElem.html("Sorry, can't tell which tone that's supposed to be");
+        rih.resultMsgElem.show();
     };
     
     rih.hide = function() {
@@ -76,24 +79,38 @@ function ResultHandler(resultId, spinnerId, successId, failureId, unknownId, sou
     return rih;
 }
 
-function ToneTutorServices(exampleAudioId, syllableTextClass, resultToneClass, resultHandler) {
+function PromptHandler(syllableTextId, exampleAudioId) {
+    var ph = this;
+    ph.exampleAudioElem = $(exampleAudioId);
+    ph.syllableTextElem = $(syllableTextId);
+
+    ph.prompt = function(text, audioUrl) {
+        ph.syllableTextElem.html(text);
+        ph.exampleAudioElem.attr('src', audioUrl);
+        ph.exampleAudioElem.load();
+    };
+
+    return this;
+}
+
+function ToneTutorServices(promptHandler, resultHandler) {
     var tts = this;
-    this.exampleAudioId = exampleAudioId;
-    this.syllableTextClass = syllableTextClass;
-    this.resultToneClass = resultToneClass;
-    this.resultHandler = resultHandler
+    tts.resultHandler = resultHandler;
+    tts.promptHandler = promptHandler;
     
-    this.host = 'http://192.168.1.100:8001';
-    this.getSyllableUrl = this.host + '/api/randomsyllable/';
-    this.checkSyllableUrl = this.host + '/api/tonecheck/';
-    this.currentSyllable = {
+    tts.host = 'http://192.168.1.100:8001';
+    tts.getSyllableUrl = tts.host + '/api/randomsyllable/';
+    tts.getSyllableTimeout = 6000;
+    tts.checkSyllableUrl = tts.host + '/api/tonecheck/';
+    tts.checkSyllableTimeout = 40000;
+    tts.currentSyllable = {
         'sound': null, 'tone': null, 'display': null, 'url': null, 'hanzi': null
     };
-    this.authUrl = this.host + '/api/tokenauth/';
-    this.authTimeout = 3000;
-    this.authToken = '';
+    tts.authUrl = tts.host + '/api/tokenauth/';
+    tts.authTimeout = 6000;
+    tts.authToken = '';
 
-    this.authenticate = function(success) {
+    tts.authenticate = function(success) {
         console.log('authenticate() entered');
         $.ajax({
             url: tts.authUrl,
@@ -122,6 +139,7 @@ function ToneTutorServices(exampleAudioId, syllableTextClass, resultToneClass, r
         $.ajax({
             type: 'GET',
             url: tts.getSyllableUrl,
+            timeout: tts.getSyllableTimeout,
             dataType: 'json',
             headers: {Authorization: 'Token ' + tts.authToken},
 
@@ -133,11 +151,7 @@ function ToneTutorServices(exampleAudioId, syllableTextClass, resultToneClass, r
                 tts.currentSyllable.url = tts.host + data.url;
                 tts.currentSyllable.hanzi = data.hanzi;
 
-                example_audio = document.getElementById(self.exampleAudioId);
-                example_audio.src = tts.currentSyllable.url;
-                example_audio.load();
-
-                var displayText = data.display;
+                // --- Generate the string to prompt the user with.
                 var hanziList = '';
                 for (var i = 0; i < tts.currentSyllable.hanzi.length; i++) {
                     hanziList = hanziList + tts.currentSyllable.hanzi[i][0];
@@ -145,11 +159,10 @@ function ToneTutorServices(exampleAudioId, syllableTextClass, resultToneClass, r
                         hanziList = hanziList + ', '
                     }
                 }
-                displayText = displayText + ' (' + hanziList + ')';
-                syllableTextElems = document.getElementsByClassName(tts.syllableTextClass);
-                for (var i = 0; i < syllableTextElems.length; i++) {
-                    syllableTextElems[i].innerHTML = displayText;
-                }
+                var promptText = data.display;
+                promptText = promptText + ' (' + hanziList + ')';
+
+                tts.promptHandler.prompt(promptText, tts.currentSyllable.url)
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 console.log('remote call in getRandomSyllable() failed: ' + textStatus);
@@ -158,16 +171,15 @@ function ToneTutorServices(exampleAudioId, syllableTextClass, resultToneClass, r
         });
     };
 
-    this.checkSyllable = function(attemptData) {
+    this.checkSyllable = function(attemptData, attemptMd5) {
         /* attemptData is a Blob containing the user's attempt at pronunciation.
          * 
          */
         console.log('checkSyllableFile: entered');
-        var attempt_md5_hex = SparkMD5.ArrayBuffer.hash(attemptData);
-        console.log('attempt md5: ' + attempt_md5_hex);
+        console.log('attempt md5: ' + attemptMd5);
         var data = new FormData();
         data.append('attempt', attemptData);
-        data.append('attempt_md5', attempt_md5_hex);
+        data.append('attempt_md5', attemptMd5);
         data.append('extension', '3gpp');
         data.append('expected_sound', tts.currentSyllable.sound);
         data.append('expected_tone', tts.currentSyllable.tone);
@@ -176,6 +188,7 @@ function ToneTutorServices(exampleAudioId, syllableTextClass, resultToneClass, r
         $.ajax({
             type: 'POST',
             url: tts.checkSyllableUrl,
+            timeout: tts.checkSyllableTimeout,
             data: data,
             processData: false,
             contentType: false,
@@ -184,17 +197,17 @@ function ToneTutorServices(exampleAudioId, syllableTextClass, resultToneClass, r
             success: function(data, textStatus, jqXHR) {
                 console.log('checkSyllable ajax success:');
                 console.log(data);
-                resultToneElems = document.getElementsByClassName(tts.resultToneClass);
-                for (var i = 0; i < resultToneElems.length; i++) {
-                    resultToneElems[i].innerHTML = data.tone;
-                }
 
-                if (data.tone == tts.currentSyllable.tone) {
+                if (data.tone == null) {
+                    tts.resultHandler.unknown();
+                    tts.resultHandler.show();
+                }
+                else if (data.tone == tts.currentSyllable.tone) {
                     tts.resultHandler.success();
                     tts.resultHandler.show();
                 }
                 else {
-                    tts.resultHandler.failure();
+                    tts.resultHandler.failure(data.tone);
                     tts.resultHandler.show();
                 }
             },
@@ -258,8 +271,9 @@ var app = {
                 var reader = new FileReader();
 
                 reader.onloadend = function(e) {
+                    var attemptMd5 = SparkMD5.ArrayBuffer.hash(this.result);
                     var blob = new Blob([this.result]);
-                    success(blob);
+                    success(blob, attemptMd5);
                 }
 
                 reader.readAsArrayBuffer(file);

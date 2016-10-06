@@ -54,9 +54,9 @@
         </div>
 
         <div id="controls">
-            <p class="syllable-text"></p>
+            <p id="prompt-text"></p>
             <audio id="example-audio" controls="" src=""></audio>
-            <p id="auth-button">Authenticate</p>
+            <p id="auth-button" style="display: none;">Authenticate</p>
             <p id="record-button">Record your attempt</p>
             <p id="next-button">Next syllable</p>
             
@@ -67,7 +67,7 @@
                     <img class="result-image" id="failure-image" src="img/red_x.png" /> 
                     <img class="result-image" id="unknown-image" src="img/blue_question-mark.png" /> 
                 </p>
-                <p id="sounds-like">Sounds like tone <span class="result-tone">?</span>.</p>
+                <p id="result-msg"></p>
             </div>
         </div>
     </div>
@@ -76,11 +76,12 @@
     <script type="text/javascript" src="js/spark-md5.js"></script>
     <script type="text/javascript" src="js/index.js"></script>
     <script type="text/javascript">
-        rh = ResultHandler(
+        var ph = PromptHandler('#prompt-text', '#example-audio');
+        var rh = ResultHandler(
             "#result", "#spinner-image", "#success-image", "#failure-image", "#unknown-image",
-            "#sounds-like"
+            "#result-msg"
         );
-        tts = ToneTutorServices("example-audio", "syllable-text", "result-tone", rh);
+        tts = ToneTutorServices(ph, rh);
         app.initialize(tts);
         $('#auth-button').click(function() {
             tts.authenticate();
