@@ -26,57 +26,71 @@ if(!DEBUG){
     }
 }
 
-function ResultHandler(resultId, spinnerId, successId, failureId, unknownId, resultMsgId) {
+function ResultHandler(
+        resultId, spinnerId, successId, failureId, unknownId, resultMsgId, attemptAudioId
+    )
+{
     /* Handles the display/hiding of images related to results from syllableCheck. */
-    var rih = this;
-    rih.resultElem = $(resultId);
-    rih.spinnerImg = $(spinnerId);    // Circular spinner
-    rih.successImg = $(successId);    // Green checkmark
-    rih.failureImg = $(failureId);    // Red X
-    rih.unknownImg = $(unknownId);    // Blue Question Mark
-    rih.resultMsgElem = $(resultMsgId);
+    var rh = this;
+    rh.resultElem = $(resultId);
+    rh.spinnerImg = $(spinnerId);    // Circular spinner
+    rh.successImg = $(successId);    // Green checkmark
+    rh.failureImg = $(failureId);    // Red X
+    rh.unknownImg = $(unknownId);    // Blue Question Mark
+    rh.resultMsgElem = $(resultMsgId);
+    rh.attemptAudioElem = $(attemptAudioId);
 
-    rih.clear = function() {
-        rih.spinnerImg.hide();
-        rih.successImg.hide();
-        rih.failureImg.hide();
-        rih.unknownImg.hide();
-        rih.resultMsgElem.hide();
-    };
-
-    rih.spinner = function() {
-        rih.clear();
-        rih.spinnerImg.show();
-    };
-    
-    rih.success = function() {
-        rih.clear();
-        rih.successImg.show();
+    rh.clear = function() {
+        rh.spinnerImg.hide();
+        rh.successImg.hide();
+        rh.failureImg.hide();
+        rh.unknownImg.hide();
+        rh.resultMsgElem.hide();
+        rh.attemptAudioElem.hide();
     };
 
-    rih.failure = function(resultTone) {
-        rih.clear();
-        rih.failureImg.show();
-        rih.resultMsgElem.html('Sounds like tone ' + resultTone);
-        rih.resultMsgElem.show();
-    };
-    
-    rih.unknown = function() {
-        rih.clear();
-        rih.unknownImg.show();
-        rih.resultMsgElem.html("Sorry, can't tell which tone that's supposed to be");
-        rih.resultMsgElem.show();
-    };
-    
-    rih.hide = function() {
-        rih.resultElem.hide();
-    };
-
-    rih.show = function() {
-        rih.resultElem.show();
+    rh.setAudioUrl = function(audioUrl) {
+        rh.attemptAudioElem.attr('src', audioUrl);
+        rh.attemptAudioElem[0].load();
+        rh.attemptAudioElem[0].play();
     }
     
-    return rih;
+    rh.spinner = function() {
+        rh.clear();
+        rh.spinnerImg.show();
+    };
+    
+    rh.success = function() {
+        rh.clear();
+        rh.successImg.show();
+        rh.attemptAudioElem.show();
+    };
+
+    rh.failure = function(resultTone) {
+        rh.clear();
+        rh.failureImg.show();
+        rh.resultMsgElem.html('Sounds like tone ' + resultTone);
+        rh.resultMsgElem.show();
+        rh.attemptAudioElem.show();
+    };
+    
+    rh.unknown = function() {
+        rh.clear();
+        rh.unknownImg.show();
+        rh.resultMsgElem.html("Sorry, can't tell which tone that's supposed to be");
+        rh.resultMsgElem.show();
+        rh.attemptAudioElem.show();
+    };
+    
+    rh.hide = function() {
+        rh.resultElem.hide();
+    };
+
+    rh.show = function() {
+        rh.resultElem.show();
+    }
+    
+    return rh;
 }
 
 function PromptHandler(syllableTextId, exampleAudioId) {
@@ -87,7 +101,7 @@ function PromptHandler(syllableTextId, exampleAudioId) {
     ph.prompt = function(text, audioUrl) {
         ph.syllableTextElem.html(text);
         ph.exampleAudioElem.attr('src', audioUrl);
-        ph.exampleAudioElem.load();
+        ph.exampleAudioElem[0].load();
     };
 
     return this;
@@ -162,11 +176,13 @@ function ToneTutorServices(promptHandler, resultHandler) {
                 var promptText = data.display;
                 promptText = promptText + ' (' + hanziList + ')';
 
-                tts.promptHandler.prompt(promptText, tts.currentSyllable.url)
+                tts.promptHandler.prompt(promptText, tts.currentSyllable.url);
+                return this;
             },
             error: function(jqXHR, textStatus, errorThrown) {
                 console.log('remote call in getRandomSyllable() failed: ' + textStatus);
                 console.log(errorThrown);
+                return this;
             },
         });
     };
@@ -297,6 +313,9 @@ var app = {
             function(mediaFiles){
                 console.log('captured');
                 var mf = mediaFiles[0];
+                console.log(mf);
+                app.toneTutorServices.resultHandler.setAudioUrl(mf.localURL);
+//                app.toneTutorServices.resultHandler.setAudioUrl(mf.fullPath);
                 app.convertMediaFileToBlob(mf, app.toneTutorServices.checkSyllable);
             },
             function(error){

@@ -55,10 +55,10 @@
 
         <div id="controls">
             <p id="prompt-text"></p>
-            <audio id="example-audio" controls="" src=""></audio>
-            <p id="auth-button" style="display: none;">Authenticate</p>
-            <p id="record-button">Record your attempt</p>
-            <p id="next-button">Next syllable</p>
+            <audio id="example-audio" controls="true" src=""></audio>
+            <p id="auth-button" class="button" style="display: none;">Authenticate</p>
+            <p id="record-button" class="button">Record your attempt</p>
+            <p id="next-button" class="button">Next syllable</p>
             
             <div id="result">
                 <p>Result:
@@ -68,6 +68,7 @@
                     <img class="result-image" id="unknown-image" src="img/blue_question-mark.png" /> 
                 </p>
                 <p id="result-msg"></p>
+                <audio id="attempt-audio" controls="true" src=""></audio>
             </div>
         </div>
     </div>
@@ -79,7 +80,7 @@
         var ph = PromptHandler('#prompt-text', '#example-audio');
         var rh = ResultHandler(
             "#result", "#spinner-image", "#success-image", "#failure-image", "#unknown-image",
-            "#result-msg"
+            "#result-msg", "#attempt-audio"
         );
         tts = ToneTutorServices(ph, rh);
         app.initialize(tts);

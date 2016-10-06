@@ -52,6 +52,7 @@ body {
     top: 0;
     height:100%;                   /* text area height */
     width:100%;                   /* text area width */
+    font-size: 2em;
     text-align:center;
     padding:0px 0px 0px 0px;     /* image height is 200px */
     margin: 0px 0px 0px 0px;  /* offset vertical: half of image height and text area height */
@@ -74,8 +75,19 @@ body {
     margin-top: 189px;  /* half of image height plus 20px extra*/
 }
 
+#prompt-text {
+    font-size: 2em;
+}
+
 #controls {
     display: none;
+}
+
+.button {
+    padding: 2%;
+    width: 76%;
+    margin-left: 10%;
+    border: 1px solid grey;
 }
 
 .result-image {
