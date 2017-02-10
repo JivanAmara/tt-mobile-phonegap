@@ -290,6 +290,8 @@ var app = {
     bindEvents: function() {
         document.addEventListener('deviceready', this.onDeviceReady, false);
         document.addEventListener('click', this.onClick, false);
+        // For iOS to get past splash screen
+        document.addEventListener('touchend', this.onClick, false);
     },
     // deviceready Event Handler
     //
