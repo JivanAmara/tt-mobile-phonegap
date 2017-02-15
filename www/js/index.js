@@ -261,14 +261,29 @@ function ToneTutorServices(promptHandler, resultHandler) {
                         tts.resultHandler.failure(data.tone);
                         tts.resultHandler.show();
                     }
+
+                tts.resultHandler.hide();
+                // var explode = function(){
+                //    tts.resultHandler.hide();
+                //     };
+                // setTimeout(explode, 5000);
+
                 },
                 error: function(jqXHR, textStatus, errorThrown) {
                     console.log('checkSyllable ajax failure: ');
                     console.log('textStatus, errorThrown: ' + textStatus + ', ' + errorThrown);
-                    tts.resultHandler.hide();
+
+
+                // var explode = function(){
+                //    tts.resultHandler.hide();
+                // };
+                // setTimeout(explode, 5000);
+                tts.resultHandler.hide();
                 }
+
             });
             console.log('checkSyllable: leaving');
+            tts.resultHandler.hide();
         }
         return f;
     }
@@ -321,7 +336,15 @@ var app = {
         // Actually converts to an ArrayBuffer rather than a Blob.
         var app = this;
         if (failure == undefined) {
-            failure = function() {console.log('convertMediaFileToBlob failed')};
+            failure = function() {
+                console.log('convertMediaFileToBlob failed');
+
+                // tts.resultHandler.hide();
+                setTimeout(function()
+                {
+                    tts.resultHandler.hide();
+                }, 2000);
+            };
         }
         audio_filepath = mf.fullPath;
 
@@ -361,7 +384,12 @@ var app = {
             },
             function(error){
                 console.log('capture failed: ' + error);
-                app.toneTutorServices.resultHandler.hide();
+
+                var explode = function(){
+                  app.toneTutorServices.resultHandler.hide();
+                };
+                setTimeout(explode, 5000);
+                // app.toneTutorServices.resultHandler.hide();
             },
             options
         );
